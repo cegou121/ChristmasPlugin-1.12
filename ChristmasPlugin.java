@@ -3,49 +3,74 @@ package org.example.ua.itristan.christmasplugiт
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
-public class ChristmasPlugin extends JavaPlugin implements Listener {
-
-    private boolean snowEffectEnabled = true;
+public class ChristmasPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        Bukkit.getServer().getPluginManager().registerEvents(this, this);
+        getLogger().info("Плагин включен!");
+
+        startSnowEffect();
+
+        startReedGrowth();
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (cmd.getName().equalsIgnoreCase("snow")) {
-            if (sender instanceof Player) {
-                Player player = (Player) sender;
-                snowFallEffect(player.getLocation());
-            } else {
-                sender.sendMessage("This command can only be executed by a player.");
+    public void onDisable() {
+        getLogger().info("Плагин выключен!");
+    }
+
+    private void startSnowEffect() {
+        BukkitTask snowTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                World world = Bukkit.getWorld("world");
+                if (world != null) {
+                    int snowRadius = 20;
+                    int centerX = 0;
+                    int centerY = 64; 
+                    int centerZ = 0; 
+
+                    for (int x = centerX - snowRadius; x <= centerX + snowRadius; x++) {
+                        for (int z = centerZ - snowRadius; z <= centerZ + snowRadius; z++) {
+                            Location location = new Location(world, x, centerY, z);
+                            world.setStorm(true); 
+                            world.strikeLightningEffect(location); 
+                        }
+                    }
+                }
             }
-            return true;
-        } else if (cmd.getName().equalsIgnoreCase("snows")) {
-            snowEffectEnabled = !snowEffectEnabled;
-            sender.sendMessage("Snow effect " + (snowEffectEnabled ? "enabled" : "disabled"));
-            return true;
-        }
-        return false;
+        }.runTaskTimer(this, 0L, 20L * 60 * 20); 
     }
 
-    @EventHandler
-    public void onPlayerMove(PlayerMoveEvent event) {
-        if (snowEffectEnabled) {
-            snowFallEffect(event.getPlayer().getLocation());
-        }
-    }
+    private void startReedGrowth() {
+        BukkitTask reedGrowthTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                World world = Bukkit.getWorld("world");
+                if (world != null) {
+                    int growthRadius = 10;
+                    int centerX = 0;
+                    int centerZ = 0;
 
-    private void snowFallEffect(Location location) {
-        location.getWorld().spawnFallingBlock(location, Material.SNOW, (byte) 0);
+                    for (int x = centerX - growthRadius; x <= centerX + growthRadius; x++) {
+                        for (int z = centerZ - growthRadius; z <= centerZ + growthRadius; z++) {
+                            Location location = new Location(world, x, 0, z);
+                            Block block = location.getBlock();
+
+                            if (block.getType() == Material.SUGAR_CANE) {
+                                block.setType(Material.AIR);
+                                world.getBlockAt(location.add(0, 1, 0)).setType(Material.SUGAR_CANE);
+                            }
+                        }
+                    }
+                }
+            }
+        }.runTaskTimer(this, 0L, 20L * 60 * 20); 
     }
 }
